@@ -59,6 +59,51 @@ where
     fn map<T, M: Fn(O) -> T>(&self, mapper: M) -> impl Parser<'src, I, T, S, E> {
         move |tokens| self(tokens).map(|(rest, (tok, span))| (rest, (mapper(tok), span)))
     }
+    fn repeated(&self) -> impl Parser<'src, I, Vec<(O, S)>, S, E> {
+        move |mut tokens| loop {
+            let mut items = Vec::new();
+            match self(tokens) {
+                Ok((rest, (out, span))) => {
+                    tokens = rest;
+                    items.push((out, span))
+                }
+                Err(_) => {
+                    break Ok((tokens, {
+                        let span = match (items.first(), items.last()) {
+                            (Some((_, s)), None) => *s,
+                            (Some((_, s1)), Some((_, s2))) => s1.merge(*s2),
+                            _ => S::empty(),
+                        };
+                        (items, span)
+                    }))
+                }
+            }
+        }
+    }
+
+    fn foldl<B, M: Fn(O, B) -> O>(
+        &self,
+        other: impl Parser<'src, I, B, S, E>,
+        f: M,
+    ) -> impl Parser<'src, I, O, S, E> {
+        move |tokens| {
+            let (rest, base) = self(tokens)?;
+            let (rest, (rhs, _)) = other.repeated()(rest)?;
+            let output = rhs
+                .into_iter()
+                .fold(base, |(accum_o, accum_span), (new_o, new_span)| {
+                    (f(accum_o, new_o), accum_span.merge(new_span))
+                });
+            Ok((rest, output))
+        }
+    }
+    fn infix<M: Fn(O, B, O) -> O, B>(
+        &self,
+        infix: impl Parser<'src, I, B, S, E> + Clone,
+        mapper: M,
+    ) -> impl Parser<'src, I, O, S, E> {
+        move |tokens| self.foldl(infix.then(self), |a, (b, c)| mapper(a, b, c))(tokens)
+    }
 }
 
 impl<'src, I, O, E, S, F> Parser<'src, I, O, S, E> for F
