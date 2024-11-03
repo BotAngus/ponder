@@ -101,11 +101,11 @@ where
         }
     }
     fn span(&self) -> impl Parser<'src, I, S, S, E> {
-        move |tokens| self(tokens).map(|(rest, (_, b))| (rest, (b, b)))
+        self.map_with(|_, s| s)
     }
     fn infix<M: Fn(O, B, O) -> O, B>(
         &self,
-        infix: impl Parser<'src, I, B, S, E> + Clone,
+        infix: impl Parser<'src, I, B, S, E>,
         mapper: M,
     ) -> impl Parser<'src, I, O, S, E> {
         move |tokens| self.foldl(infix.then(self), |a, (b, c)| mapper(a, b, c))(tokens)
