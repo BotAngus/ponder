@@ -50,14 +50,14 @@ where
 
     fn delimited_by(&self, left: I, right: I) -> impl Parser<'src, I, O, S, E> {
         move |tokens| {
-            just(left, ())
+            just(left)
                 .then(self)
-                .then(just(right, ()))
+                .then(just(right))
                 .map(|(((), b), ())| b)(tokens)
         }
     }
     fn map<T, M: Fn(O) -> T>(&self, mapper: M) -> impl Parser<'src, I, T, S, E> {
-        move |tokens| self(tokens).map(|(rest, (tok, span))| (rest, (mapper(tok), span)))
+        move |tokens| self.map_with(|o, _| mapper(o))(tokens)
     }
     fn map_with<T, M: Fn(O, S) -> T>(&self, mapper: M) -> impl Parser<'src, I, T, S, E> {
         move |tokens| self(tokens).map(|(rest, (tok, span))| (rest, (mapper(tok, span), span)))
