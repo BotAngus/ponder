@@ -137,6 +137,14 @@ where
             Ok((rest, folded))
         }
     }
+
+    fn infix<B, F: Fn(O, B, O) -> O>(
+        &self,
+        infix: impl Parser<'src, I, B, S, E>,
+        f: F,
+    ) -> impl Parser<'src, I, O, S, E> {
+        move |tokens| self.foldl(infix.then(self), |a, (b, c)| f(a, b, c))(tokens)
+    }
 }
 
 impl<'src, I, O, E, S, F> Parser<'src, I, O, S, E> for F
