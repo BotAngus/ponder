@@ -5,7 +5,7 @@ where
     S: Span<'src>,
     O: Clone,
     I: Input<'src>,
-    E: Error<'src, I, Span = S>,
+    E: Error<'src, I, S>,
 {
     move |tokens| match tokens {
         [(tok, span), tail @ ..] if *tok == expect => Ok((tail, (give.clone(), *span))),

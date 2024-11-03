@@ -20,7 +20,7 @@ pub trait Parser<'src, I, O, S, E>
 where
     Self: Fn(&'src [(I, S)]) -> Result<(&'src [(I, S)], (O, S)), E>,
     I: Input<'src>,
-    E: Error<'src, I, Span = S>,
+    E: Error<'src, I, S>,
     S: Span<'src>,
 {
     fn or(&self, other: impl Parser<'src, I, O, S, E>) -> impl Parser<'src, I, O, S, E> {
@@ -65,7 +65,29 @@ impl<'src, I, O, E, S, F> Parser<'src, I, O, S, E> for F
 where
     F: Fn(&'src [(I, S)]) -> Result<(&'src [(I, S)], (O, S)), E>,
     I: Input<'src>,
-    E: Error<'src, I, Span = S>,
+    E: Error<'src, I, S>,
     S: Span<'src>,
 {
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Error, Input, PResult, Parser, Span};
+
+    fn check<'src, I, O, S, E, P>(_: P)
+    where
+        P: Parser<'src, I, O, S, E>,
+        I: Input<'src>,
+        S: Span<'src>,
+        E: Error<'src, I, S>,
+    {
+    }
+
+    #[test]
+    fn test1() {
+        fn local<'src>(tokens: &'src [((), ())]) -> PResult<'src, (), (), (), ()> {
+            Ok((tokens, ((), ())))
+        }
+        check(local.or(local).delimited_by((), ()));
+    }
 }
