@@ -1,10 +1,10 @@
-use error::Error;
-use span::Span;
-
 pub mod error;
 pub mod parser;
 pub mod span;
 
+pub use span::*;
+pub use error::*;
+pub use parser::*;
 pub trait Input<'src>
 where
     Self: Copy + PartialEq + 'src,
