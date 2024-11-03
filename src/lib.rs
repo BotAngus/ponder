@@ -2,9 +2,12 @@ pub mod error;
 pub mod parser;
 pub mod span;
 
-pub use span::*;
 pub use error::*;
 pub use parser::*;
+pub use span::*;
+
+pub type PResult<'src, I, O, S, E> = Result<(&'src [(I, S)], (O, S)), E>;
+
 pub trait Input<'src>
 where
     Self: Copy + PartialEq + 'src,
