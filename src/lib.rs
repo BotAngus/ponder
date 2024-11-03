@@ -59,6 +59,9 @@ where
     fn map<T, M: Fn(O) -> T>(&self, mapper: M) -> impl Parser<'src, I, T, S, E> {
         move |tokens| self(tokens).map(|(rest, (tok, span))| (rest, (mapper(tok), span)))
     }
+    fn map_with<T, M: Fn(O, S) -> T>(&self, mapper: M) -> impl Parser<'src, I, T, S, E> {
+        move |tokens| self(tokens).map(|(rest, (tok, span))| (rest, (mapper(tok, span), span)))
+    }
     fn repeated(&self) -> impl Parser<'src, I, Vec<(O, S)>, S, E> {
         move |mut tokens| loop {
             let mut items = Vec::new();
@@ -96,6 +99,9 @@ where
                 });
             Ok((rest, output))
         }
+    }
+    fn span(&self) -> impl Parser<'src, I, S, S, E> {
+        move |tokens| self(tokens).map(|(rest, (_, b))| (rest, (b, b)))
     }
     fn infix<M: Fn(O, B, O) -> O, B>(
         &self,
