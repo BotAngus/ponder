@@ -1,12 +1,9 @@
 use crate::span::Span;
 
-pub trait Error<I> {
-    type Span<'src>: Span<'src>;
+pub trait Error<'src, I>: 'src {
+    type Span: Span<'src>;
     fn merge(self, other: Self) -> Self;
     fn eof<Iter: IntoIterator<Item = I>>(expected: Iter) -> Self;
-    fn unexpected<'src, Iter: IntoIterator<Item = I>>(
-        expected: Iter,
-        found: I,
-        span: Self::Span<'src>,
-    ) -> Self;
+    fn unexpected<Iter: IntoIterator<Item = I>>(expected: Iter, found: I, span: Self::Span)
+        -> Self;
 }

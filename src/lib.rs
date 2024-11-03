@@ -20,7 +20,7 @@ pub trait Parser<'src, I, O, S, E>
 where
     Self: Fn(&'src [(I, S)]) -> Result<(&'src [(I, S)], (O, S)), E>,
     I: Input<'src>,
-    E: Error<I>,
+    E: Error<'src, I, Span = S>,
     S: Span<'src>,
 {
     fn or(&self, other: impl Parser<'src, I, O, S, E>) -> impl Parser<'src, I, O, S, E> {
@@ -47,13 +47,25 @@ where
             Err(e) => Err(e),
         }
     }
+
+    fn delimited_by(&self, left: I, right: I) -> impl Parser<'src, I, O, S, E> {
+        move |tokens| {
+            just(left, ())
+                .then(self)
+                .then(just(right, ()))
+                .map(|(((), b), ())| b)(tokens)
+        }
+    }
+    fn map<T, M: Fn(O) -> T>(&self, mapper: M) -> impl Parser<'src, I, T, S, E> {
+        move |tokens| self(tokens).map(|(rest, (tok, span))| (rest, (mapper(tok), span)))
+    }
 }
 
 impl<'src, I, O, E, S, F> Parser<'src, I, O, S, E> for F
 where
     F: Fn(&'src [(I, S)]) -> Result<(&'src [(I, S)], (O, S)), E>,
     I: Input<'src>,
-    E: Error<I>,
+    E: Error<'src, I, Span = S>,
     S: Span<'src>,
 {
 }
